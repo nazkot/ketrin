@@ -1,0 +1,154 @@
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Ketrin Ödemeler</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#ff69b4">
+    <link rel="icon" href="logo.png" type="image/png">
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(to right, #fce4ec, #e1f5fe);
+            color: #880e4f;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #ec407a;
+        }
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 0 10px rgba(0,0,0,0.05);
+        }
+        input, button, select {
+            width: 100%;
+            padding: 10px;
+            margin-top: 8px;
+            border-radius: 6px;
+            border: 1px solid #f8bbd0;
+            font-size: 14px;
+        }
+        button {
+            background-color: #f06292;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #ec407a;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        th, td {
+            border: 1px solid #f8bbd0;
+            padding: 8px;
+            text-align: center;
+        }
+        th {
+            background-color: #fce4ec;
+        }
+        tfoot th {
+            background-color: #e1f5fe;
+        }
+    </style>
+</head>
+<body>
+    <h1>Ketrin Ödemeler</h1>
+    <div class="card">
+        <input type="date" id="tarih">
+        <input type="text" id="tip" placeholder="Transfer Tipi">
+        <input type="text" id="ad" placeholder="Ad Soyad / Firma">
+        <input type="number" id="tutar" placeholder="Tutar">
+        <button onclick="ekle()">Ekle</button>
+    </div>
+
+    <div class="card">
+        <table id="tablo">
+            <thead>
+                <tr>
+                    <th>Tarih</th>
+                    <th>Tip</th>
+                    <th>Ad / Firma</th>
+                    <th>Tutar</th>
+                    <th>Sil</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+            <tfoot>
+                <tr>
+                    <th colspan="3">TOPLAM</th>
+                    <th id="toplamTutar">₺0</th>
+                    <th></th>
+                </tr>
+            </tfoot>
+        </table>
+        <button onclick="pdfAl()">📄 PDF Al</button>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script>
+        let veriler = JSON.parse(localStorage.getItem("odemeVerileri") || "[]");
+
+        function tabloyuGoster() {
+            const tbody = document.querySelector("#tablo tbody");
+            tbody.innerHTML = "";
+            let toplam = 0;
+
+            veriler.forEach((v, i) => {
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td>${v.tarih}</td>
+                    <td>${v.tip}</td>
+                    <td>${v.ad}</td>
+                    <td>${v.tutar}</td>
+                    <td><button onclick="sil(${i})">Sil</button></td>
+                `;
+                tbody.appendChild(tr);
+                toplam += Number(v.tutar);
+            });
+
+            document.getElementById("toplamTutar").textContent = "₺" + toplam;
+            localStorage.setItem("odemeVerileri", JSON.stringify(veriler));
+        }
+
+        function ekle() {
+            const tarih = document.getElementById("tarih").value;
+            const tip = document.getElementById("tip").value;
+            const ad = document.getElementById("ad").value;
+            const tutar = Number(document.getElementById("tutar").value);
+            if (!tarih || !tip || !ad || isNaN(tutar)) return alert("Tüm alanları doldurun");
+            veriler.push({ tarih, tip, ad, tutar });
+            tabloyuGoster();
+        }
+
+        function sil(i) {
+            if (confirm("Kaydı silmek istiyor musunuz?")) {
+                veriler.splice(i, 1);
+                tabloyuGoster();
+            }
+        }
+
+        async function pdfAl() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            doc.text("KETRIN ÖDEMELERİ", 10, 10);
+            let y = 20;
+            veriler.forEach(v => {
+                doc.text(`${v.tarih} | ${v.tip} | ${v.ad} | ₺${v.tutar}`, 10, y);
+                y += 10;
+            });
+            doc.save("ketrin_odemeler.pdf");
+        }
+
+        tabloyuGoster();
+    </script>
+</body>
+</html>

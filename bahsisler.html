@@ -1,0 +1,168 @@
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Ketrin Bahşişler</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#ff69b4">
+    <link rel="icon" href="logo.png" type="image/png">
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(to right, #fce4ec, #e1f5fe);
+            color: #880e4f;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #ec407a;
+        }
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 0 10px rgba(0,0,0,0.05);
+        }
+        input, button {
+            width: 100%;
+            padding: 10px;
+            margin-top: 8px;
+            border-radius: 6px;
+            border: 1px solid #f8bbd0;
+            font-size: 14px;
+        }
+        button {
+            background-color: #f06292;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #ec407a;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        th, td {
+            border: 1px solid #f8bbd0;
+            padding: 8px;
+            text-align: center;
+        }
+        th {
+            background-color: #fce4ec;
+        }
+        tfoot th {
+            background-color: #e1f5fe;
+        }
+    </style>
+</head>
+<body>
+    <h1>Ketrin Bahşişler</h1>
+    <div class="card">
+        <input type="date" id="tarih">
+        <input type="number" id="tl" placeholder="TL">
+        <input type="number" id="dolar" placeholder="Dolar">
+        <input type="number" id="euro" placeholder="Euro">
+        <input type="number" id="pound" placeholder="Pound">
+        <button onclick="ekle()">Ekle</button>
+    </div>
+
+    <div class="card">
+        <table id="tablo">
+            <thead>
+                <tr>
+                    <th>Tarih</th>
+                    <th>TL</th>
+                    <th>Dolar</th>
+                    <th>Euro</th>
+                    <th>Pound</th>
+                    <th>Sil</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+            <tfoot>
+                <tr>
+                    <th>TOPLAM</th>
+                    <th id="toplamTL">₺0</th>
+                    <th id="toplamDolar">$0</th>
+                    <th id="toplamEuro">€0</th>
+                    <th id="toplamPound">£0</th>
+                    <th></th>
+                </tr>
+            </tfoot>
+        </table>
+        <button onclick="pdfAl()">📄 PDF Al</button>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script>
+        let veriler = JSON.parse(localStorage.getItem("bahsisVerileri") || "[]");
+
+        function tabloyuGoster() {
+            const tbody = document.querySelector("#tablo tbody");
+            tbody.innerHTML = "";
+            let toplamTL = 0, toplamDolar = 0, toplamEuro = 0, toplamPound = 0;
+
+            veriler.forEach((v, i) => {
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td>${v.tarih}</td>
+                    <td>${v.tl}</td>
+                    <td>${v.dolar}</td>
+                    <td>${v.euro}</td>
+                    <td>${v.pound}</td>
+                    <td><button onclick="sil(${i})">Sil</button></td>
+                `;
+                tbody.appendChild(tr);
+                toplamTL += Number(v.tl);
+                toplamDolar += Number(v.dolar);
+                toplamEuro += Number(v.euro);
+                toplamPound += Number(v.pound);
+            });
+
+            document.getElementById("toplamTL").textContent = "₺" + toplamTL;
+            document.getElementById("toplamDolar").textContent = "$" + toplamDolar;
+            document.getElementById("toplamEuro").textContent = "€" + toplamEuro;
+            document.getElementById("toplamPound").textContent = "£" + toplamPound;
+
+            localStorage.setItem("bahsisVerileri", JSON.stringify(veriler));
+        }
+
+        function ekle() {
+            const tarih = document.getElementById("tarih").value;
+            const tl = Number(document.getElementById("tl").value);
+            const dolar = Number(document.getElementById("dolar").value);
+            const euro = Number(document.getElementById("euro").value);
+            const pound = Number(document.getElementById("pound").value);
+            if (!tarih) return alert("Tarih giriniz");
+            veriler.push({ tarih, tl, dolar, euro, pound });
+            tabloyuGoster();
+        }
+
+        function sil(i) {
+            if (confirm("Kaydı silmek istiyor musunuz?")) {
+                veriler.splice(i, 1);
+                tabloyuGoster();
+            }
+        }
+
+        async function pdfAl() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            doc.text("KETRIN BAHŞİŞLERİ", 10, 10);
+            let y = 20;
+            veriler.forEach(v => {
+                doc.text(`${v.tarih} | ₺${v.tl} | $${v.dolar} | €${v.euro} | £${v.pound}`, 10, y);
+                y += 10;
+            });
+            doc.save("ketrin_bahsisler.pdf");
+        }
+
+        tabloyuGoster();
+    </script>
+</body>
+</html>
